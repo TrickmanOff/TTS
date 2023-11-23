@@ -8,3 +8,5 @@ FastSpeech
 *.pdf
 .ipynb_checkpoints
 *.ipynb
+
+*.pt
