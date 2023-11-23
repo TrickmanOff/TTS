@@ -3,12 +3,13 @@ from operator import xor
 from torch.utils.data import ConcatDataset, DataLoader
 
 import lib.datasets
-from lib import batch_sampler as batch_sampler_module
+# from lib import batch_sampler as batch_sampler_module
 from lib.collate_fn.collate import collate_fn
 from lib.config_processing.parse_config import ConfigParser
+from lib.text_encoder.base_encoder import BaseTextEncoder
 
 
-def get_dataloaders(configs: ConfigParser):
+def get_dataloaders(configs: ConfigParser, encoder: BaseTextEncoder):
     dataloaders = {}
     for split, params in configs["data"].items():
         if not isinstance(params, dict):
@@ -23,7 +24,9 @@ def get_dataloaders(configs: ConfigParser):
         # create and join datasets
         datasets = []
         for ds in params["datasets"]:
-            datasets.append(configs.init_obj(ds, lib.datasets, config_parser=configs))
+            datasets.append(configs.init_obj(ds, lib.datasets, config_parser=configs, encoder=encoder))
+            from torch.utils.data import Subset
+            import numpy as np
         assert len(datasets)
         if len(datasets) > 1:
             dataset = ConcatDataset(datasets)
@@ -37,10 +40,10 @@ def get_dataloaders(configs: ConfigParser):
             bs = params["batch_size"]
             shuffle = True
             batch_sampler = None
-        elif "batch_sampler" in params:
-            batch_sampler = configs.init_obj(params["batch_sampler"], batch_sampler_module,
-                                             data_source=dataset)
-            bs, shuffle = 1, False
+        # elif "batch_sampler" in params:
+        #     batch_sampler = configs.init_obj(params["batch_sampler"], batch_sampler_module,
+        #                                      data_source=dataset)
+        #     bs, shuffle = 1, False
         else:
             raise Exception()
 

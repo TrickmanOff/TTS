@@ -14,7 +14,7 @@ class WaveglowDecoder(BaseDecoder):
     CHECKPOINT_URL = 'https://www.googleapis.com/drive/v3/files/1WsibBTsuRg_SF2Z6L6NFRTT-NjEy1oTx?alt=media&key=AIzaSyBAigZjTwo8uh77umBBmOytKc_qjpTfRjI'
 
     def __init__(self, waveglow_path: Path = Path('waveglow') / 'pretrained_model' / 'waveglow_256channels.pt',
-                 device=torch.device('cuda'), sampling_rate: int = 22050):
+                 device=torch.device('cuda'), sampling_rate: int = 22050, **kwargs):
         super().__init__()
         if not waveglow_path.exists():
             self._load_checkpoint(waveglow_path)
@@ -31,6 +31,7 @@ class WaveglowDecoder(BaseDecoder):
         print('Waveglow weights loaded')
 
     def decode_as_wave(self, mel_spec: Tensor) -> Tensor:
+
         return waveglow_inference.get_wav(mel_spec, self.wave_glow,
                                           sampling_rate=self.sampling_rate)
 

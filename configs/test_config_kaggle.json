@@ -35,13 +35,13 @@
   },
   "data": {
     "train": {
-      "batch_size": 8,
+      "batch_size": 10,
       "num_workers": 0,
       "datasets": [
         {
           "type": "LJSpeechWithTacotronDataset",
           "args": {
-            "data_dir": "/Volumes/Samsung_T5/hse4/dla/hw3/data"
+            "data_dir": "/kaggle/input/ljspeech-tts"
           }
         }
       ]
@@ -67,14 +67,14 @@
   },
   "trainer": {
     "epochs": 100,
-    "len_epoch": 10,
-    "log_step": 1,
+    "len_epoch": 500,
+    "log_step": 250,
     "save_dir": "saved/",
     "save_period": 100000000000,
     "verbosity": 2,
     "visualize": "wandb",
     "wandb_project": "tts_project",
     "wandb_run": "kaggle_test",
-    "grad_norm_clip": 50
+    "grad_norm_clip": 1000
   }
 }

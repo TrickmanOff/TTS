@@ -1,4 +1,4 @@
-from typing import Dict, Mapping
+from typing import Dict, List, Mapping
 
 import torch
 from torch import Tensor
@@ -14,10 +14,13 @@ class CombinedLoss(BaseLoss):
 
     def forward(self, **batch) -> Dict[str, Tensor]:
         res = {}
-        total_loss = torch.tensor(0.)
+        total_loss = 0
         for part_name, part_loss_fn in self._losses.items():
             part_loss = part_loss_fn(**batch)
             total_loss += self._weights[part_name] * part_loss
             res[part_name] = part_loss
         res['loss'] = total_loss
         return res
+
+    def get_loss_parts_names(self) -> List[str]:
+        return list(self._losses.keys())

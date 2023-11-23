@@ -11,6 +11,7 @@ import torch
 import torchaudio
 from speechbrain.utils.data_utils import download_file
 from torch import Tensor
+from torchaudio.transforms import InverseMelScale
 from tqdm import tqdm
 
 from .base_dataset import BaseDataset
@@ -46,7 +47,8 @@ class LJSpeechWithTacotronDataset(BaseDataset):
     STFT_HOP_LEN = 256
 
     def __init__(self, data_dir: Union[str, Path], return_wave: bool = False,
-                 encoder: Optional[BaseTextEncoder] = None, **kwargs):
+                 encoder: Optional[BaseTextEncoder] = None,
+                 pitch_energy_dir: Optional[Union[str, Path]] = None, **kwargs):
         """
         data_dir is expected to have the following structure:
         data_dir
@@ -66,7 +68,9 @@ class LJSpeechWithTacotronDataset(BaseDataset):
         such element will be redownloaded for all entries
         """
         self._data_dir = Path(data_dir)
-        self._data_dir.mkdir(parents=True, exist_ok=True)
+        self._pitch_energy_dir = self._data_dir if pitch_energy_dir is None else Path(pitch_energy_dir)
+        entries_dirpath = self._data_dir / 'entries'
+        entries_dirpath.mkdir(parents=True, exist_ok=True)
         self._return_wave = return_wave
         self._check_entries()
         self._encoder = encoder
@@ -78,12 +82,14 @@ class LJSpeechWithTacotronDataset(BaseDataset):
     def __getitem__(self, idx: int) -> Dict[str, Any]:
         id = self.get_id_by_idx(idx)
         entry_dirpath = self.get_entry_dirpath(id)
+        pitch_energy_dirpath = self.get_entry_pitch_energy_dirpath(id)
         res = {
+            'id': id,  # str
             'mel': self.get_mel(idx),  # (freq, T)
-            'text': open(entry_dirpath / 'text.txt').readline(),
+            'text': open(entry_dirpath / 'text.txt', 'r', encoding="utf-8").readline(),
             'alignment': torch.LongTensor(np.load(str(entry_dirpath / 'alignment.npy'))),  # (P,)
-            'pitch': Tensor(np.load(str(entry_dirpath / 'pitch.npy'))),  # (T,)
-            'energy': Tensor(np.load(str(entry_dirpath / 'energy.npy'))),  # (T,)
+            'pitch': Tensor(np.load(str(pitch_energy_dirpath / 'pitch.npy'))),  # (T,)
+            'energy': Tensor(np.load(str(pitch_energy_dirpath / 'energy.npy'))),  # (T,)
         }
         if self._return_wave:
             res['wave'] = self.get_wave(idx)  # (1, wave_len)
@@ -109,6 +115,11 @@ class LJSpeechWithTacotronDataset(BaseDataset):
         entry_dirpath = self.get_entry_dirpath(self.get_id_by_idx(idx))
         return Tensor(np.load(str(entry_dirpath / 'mel.npy'), allow_pickle=True).T)  # (freq, T)
 
+    def get_entry_pitch_energy_dirpath(self, id: str) -> Path:
+        dirpath = self._pitch_energy_dir / 'entries' / id
+        dirpath.mkdir(parents=True, exist_ok=True)
+        return dirpath
+
     def get_entry_dirpath(self, id: str) -> Path:
         dirpath = self._data_dir / 'entries' / id
         dirpath.mkdir(parents=True, exist_ok=True)
@@ -120,8 +131,9 @@ class LJSpeechWithTacotronDataset(BaseDataset):
 
     def _check_entries(self):
         all_entry_files = [
-            'audio.wav', 'mel.npy', 'text.txt', 'alignment.npy', 'pitch.npy', 'energy.npy'
+            'audio.wav', 'mel.npy', 'text.txt', 'alignment.npy'
         ]
+
         not_in_all_entry_files = set()
 
         if len(os.listdir(self._data_dir / 'entries')) == 0:
@@ -133,6 +145,12 @@ class LJSpeechWithTacotronDataset(BaseDataset):
                 for entry_file in all_entry_files:
                     if entry_file not in entry_files:
                         not_in_all_entry_files.add(entry_file)
+                pitch_filepath = self.get_entry_pitch_energy_dirpath(entry_dirname) / 'pitch.npy'
+                if not pitch_filepath.exists():
+                    not_in_all_entry_files.add('pitch.npy')
+                energy_filepath = self.get_entry_pitch_energy_dirpath(entry_dirname) / 'energy.npy'
+                if not energy_filepath.exists():
+                    not_in_all_entry_files.add('energy.npy')
 
         if 'audio.wav' in not_in_all_entry_files:
             print('Audios not present for some entries')
@@ -159,7 +177,7 @@ class LJSpeechWithTacotronDataset(BaseDataset):
             if not arch_filepath.exists():
                 print(f'Downloading LJSpeech {desc}...')
                 download_file(link, arch_filepath)
-            print('Extracting LJSpeech {desc}...')
+            print(f'Extracting LJSpeech {desc}...')
             shutil.unpack_archive(arch_filepath, extracted_dirpath.parent)
 
     def _download_audios(self):
@@ -237,7 +255,7 @@ class LJSpeechWithTacotronDataset(BaseDataset):
 
                 for idx in range(chunk*chunk_size, min((chunk+1)*chunk_size, len(self))):
                     id = self.get_id_by_idx(idx)
-                    entry_dirpath = self.get_entry_dirpath(id)
+                    entry_dirpath = self.get_entry_pitch_energy_dirpath(id)
                     pitch_filepath = entry_dirpath / 'pitch.npy'
                     if pitch_filepath.exists():
                         continue
@@ -256,14 +274,22 @@ class LJSpeechWithTacotronDataset(BaseDataset):
     def _generate_energies(self):
         print('Generating energies...')
 
+        # inv_mel_scaler = InverseMelScale(n_stft=self.STFT_WIN_LEN,
+        #                                  n_mels=80,
+        #                                  sample_rate=self.sample_rate,
+        #                                  f_max=8000)
+
         for idx in tqdm(range(len(self))):
             id = self.get_id_by_idx(idx)
-            entry_dirpath = self.get_entry_dirpath(id)
+            entry_dirpath = self.get_entry_pitch_energy_dirpath(id)
             energy_filepath = entry_dirpath / 'energy.npy'
 
             # if energy_filepath.exists():
             #     continue
 
             mel = self.get_mel(idx)
-            energy = torch.linalg.norm(mel, dim=0)  # (freq,)
+            # mel = torch.exp(mel)  # inverting log-scale
+            # spec = inv_mel_scaler(mel)
+            spec = mel
+            energy = torch.linalg.norm(spec, dim=0)  # (freq,)
             np.save(str(energy_filepath), energy)

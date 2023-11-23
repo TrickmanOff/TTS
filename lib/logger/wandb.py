@@ -1,4 +1,7 @@
 from datetime import datetime
+from typing import Dict
+
+import torch
 
 import numpy as np
 import pandas as pd
@@ -88,6 +91,17 @@ class WanDBWriter:
     def add_table(self, table_name, table: pd.DataFrame):
         self.wandb.log({self._scalar_name(table_name): wandb.Table(dataframe=table)},
                        step=self.step)
+
+    def add_multiline_plot(self, title: str, data: Dict[str, torch.Tensor]):
+        xs = torch.arange(len(next(iter(data.values()))))
+
+        plot = wandb.plot.line_series(
+            xs=[xs] * len(data),
+            ys=[vals.tolist() for vals in data.values()],
+            keys=list(data.keys()),
+            title=title,
+        )
+        wandb.log({title: plot})
 
     def add_images(self, scalar_name, images):
         raise NotImplementedError()

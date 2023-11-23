@@ -14,16 +14,16 @@ class Discretizer(nn.Module):
         super().__init__()
         self.register_buffer('min_value', torch.tensor(min_value))
         self.register_buffer('max_value', torch.tensor(max_value))
-        self._boundaries = None
+        self.register_buffer('boundaries', None, persistent=False)
         self._mode = mode
         self._vals_cnt = vals_cnt
         self.update_boundaries(min_value, max_value)
 
     def update_boundaries(self, min_value: float, max_value: float):
         if self._mode == 'linear':
-            self._boundaries = torch.linspace(min_value, max_value, self._vals_cnt-1)
+            self.boundaries = torch.linspace(min_value, max_value, self._vals_cnt-1)
         elif self._mode == 'log':
-            self._boundaries = torch.logspace(np.log(min_value), np.log(max_value), self._vals_cnt-1, base=np.e)
+            self.boundaries = torch.logspace(np.log(min_value), np.log(max_value), self._vals_cnt-1, base=np.e)
         else:
             raise NotImplementedError()
 
@@ -32,7 +32,7 @@ class Discretizer(nn.Module):
         self.update_boundaries(self.min_value, self.max_value)
 
     def forward(self, input: Tensor) -> LongTensor:
-        return torch.bucketize(input, self._boundaries).long()
+        return torch.bucketize(input, self.boundaries).long()
 
 
 class PredictorConvBlock(nn.Module):
@@ -109,7 +109,7 @@ class LengthRegulator(nn.Module):
 
         output: (B, S', d)
         """
-        alignments_matrix = self.get_alignments_matrix(duration, alpha)  # (B, S', S)
+        alignments_matrix = self.get_alignments_matrix(duration, alpha).to(phonems_embeds.device)  # (B, S', S)
         result = alignments_matrix @ phonems_embeds  # (B, S', d)
         return result
 
@@ -123,7 +123,7 @@ class VarianceAdaptor(nn.Module):
                  energy_discretizer_values: int = 256,
                  predictor_config=None):
         super().__init__()
-        predictor_config = {} if predictor_config is None else None
+        predictor_config = {} if predictor_config is None else predictor_config
         self.duration_predictor = Predictor(in_dim, **predictor_config)  # predicts logs
         self.length_regulator = LengthRegulator()
 
@@ -155,7 +155,7 @@ class VarianceAdaptor(nn.Module):
         res['pred_log_duration'] = pred_log_duration  # (B, S)
         if true_duration is None:
             assert not self.training, 'You should pass true duration to the variance adaptor during training'
-            duration = torch.exp(pred_log_duration)
+            duration = torch.exp(pred_log_duration)  # (B, S)
         else:
             assert self.training, 'Do not pass true duration during inference'
             duration = true_duration

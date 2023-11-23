@@ -12,8 +12,8 @@ class FastSpeech2(BaseModel):
                  encoder_fft_layers: int = 4, decoder_fft_layers: int = 4, out_mel_freqs: int = 80,
                  fft_config: Optional[Dict] = None, variance_adaptor_config: Optional[Dict] = None):
         super().__init__()
-        fft_config = {} if fft_config is None else None
-        variance_adaptor_config = {} if variance_adaptor_config is None else None
+        fft_config = {} if fft_config is None else fft_config
+        variance_adaptor_config = {} if variance_adaptor_config is None else variance_adaptor_config
 
         self.phonems_embeds = nn.Embedding(phonems_cnt, embedding_dim=phonems_embed_dim)
         self.pos_encoding_1 = PositionalEncoding(phonems_embed_dim, max_sequence_length)
@@ -22,7 +22,7 @@ class FastSpeech2(BaseModel):
             FFTBlock(phonems_embed_dim, **fft_config)
             for _ in range(encoder_fft_layers)
         ])
-
+        print(variance_adaptor_config)
         self.variance_adaptor = VarianceAdaptor(phonems_embed_dim, **variance_adaptor_config)
         self.pos_encoding_2 = PositionalEncoding(phonems_embed_dim, max_sequence_length)
 

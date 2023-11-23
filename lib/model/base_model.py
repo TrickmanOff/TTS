@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 from torch import Tensor, nn
 
-from lib.dataset.base_dataset import BaseDataset
+from lib.datasets.base_dataset import BaseDataset
 
 
 class BaseModel(nn.Module):

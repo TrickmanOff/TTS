@@ -12,4 +12,4 @@ class MelLoss(BaseLoss):
 
         returns mean loss
         """
-        return F.mse_loss(pred_mel_spec, true_mel_spec, reduction='mean')
+        return F.l1_loss(pred_mel_spec, true_mel_spec, reduction='mean')

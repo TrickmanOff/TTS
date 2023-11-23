@@ -10,3 +10,6 @@ FastSpeech
 *.ipynb
 
 *.pt
+
+wandb
+saved

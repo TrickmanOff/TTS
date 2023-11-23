@@ -45,21 +45,27 @@ def collate_fn(dataset_items: List[dict]) -> Dict[str, Any]:
 
     result_batch = {}
 
+    result_batch['id'] = all_items['id']
+
     # mel
-    result_batch['true_mel_spec'], result_batch['mel_length'] = pad_last_d(all_items['mel'])
+    if 'mel' in all_items:
+        result_batch['true_mel_spec'], result_batch['mel_length'] = pad_last_d(all_items['mel'])
 
     # text
     if 'text' in all_items:
         result_batch['text'] = all_items['text']
 
     # alignment
-    result_batch['true_duration'], _ = pad_last_d(all_items['alignment'])
+    if 'alignment' in all_items:
+        result_batch['true_duration'], _ = pad_last_d(all_items['alignment'])
 
     # pitch
-    result_batch['true_pitch'], _ = pad_last_d(all_items['pitch'])
+    if 'pitch' in all_items:
+        result_batch['true_pitch'], _ = pad_last_d(all_items['pitch'])
 
     # energy
-    result_batch['true_energy'], _ = pad_last_d(all_items['energy'])
+    if 'energy' in all_items:
+        result_batch['true_energy'], _ = pad_last_d(all_items['energy'])
 
     # wave
     if 'wave' in all_items:
