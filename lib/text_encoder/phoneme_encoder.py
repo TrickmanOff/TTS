@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from torch import LongTensor
 
-from text import text_to_sequence
+from .text import text_to_sequence
 from lib.text_encoder.base_encoder import BaseTextEncoder
 
 

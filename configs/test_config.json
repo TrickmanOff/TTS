@@ -23,5 +23,14 @@
         "energy_discretizer_values": 256
       }
     }
+  },
+  "loss": {
+    "type": "Deepspeech2Loss",
+    "args": {
+      "mel_weight": 0.25,
+      "pitch_weight": 0.25,
+      "energy_weight": 0.25,
+      "duration_weight": 0.25
+    }
   }
 }

@@ -145,7 +145,7 @@ class VarianceAdaptor(nn.Module):
             pred_log_duration: (B, S)
             pred_pitch: (B, S')
             pred_energy: (B, S')
-            aligned_phonems_embeds: (B, S', in_dim)
+            aligned_phonemes_embeds: (B, S', in_dim)
 
             where S' is the maximal estimated length of the mel spectrogram
         }
@@ -171,5 +171,5 @@ class VarianceAdaptor(nn.Module):
         energy_discrete_values = self.energy_discretizer(pred_energy)
         energy_embeddings = self.energy_embeddings(energy_discrete_values)  # (B, S', in_dim)
 
-        res['aligned_phonems_embeds'] = aligned_phonems_embeds + pitch_embeddings + energy_embeddings
+        res['aligned_phonemes_embeds'] = aligned_phonems_embeds + pitch_embeddings + energy_embeddings
         return res

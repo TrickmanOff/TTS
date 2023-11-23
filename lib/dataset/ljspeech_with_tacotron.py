@@ -81,14 +81,19 @@ class LJSpeechWithTacotronDataset(BaseDataset):
         res = {
             'mel': self.get_mel(idx),  # (freq, T)
             'text': open(entry_dirpath / 'text.txt').readline(),
-            'alignment': torch.LongTensor(np.load(str(entry_dirpath / 'alignment.npy'))),  # (len of phonemized text,)
+            'alignment': torch.LongTensor(np.load(str(entry_dirpath / 'alignment.npy'))),  # (P,)
             'pitch': Tensor(np.load(str(entry_dirpath / 'pitch.npy'))),  # (T,)
             'energy': Tensor(np.load(str(entry_dirpath / 'energy.npy'))),  # (T,)
         }
         if self._return_wave:
             res['wave'] = self.get_wave(idx)  # (1, wave_len)
         if self._encoder is not None:
-            res['phonemes_tokens'] = self._encoder.encode(res['text'])  # (P,)
+            res['phonemes_tokens'] = torch.LongTensor(self._encoder.encode(res['text']))  # (P,)
+
+        assert res['mel'].shape[1] == len(res['pitch']) == len(res['energy'])
+        if 'phonemes_tokens' in res:
+            assert len(res['alignment']) == len(res['phonemes_tokens'])
+
         return res
 
     def __len__(self) -> int:
@@ -182,6 +187,7 @@ class LJSpeechWithTacotronDataset(BaseDataset):
             download_file(self.URL_LINKS['text'], all_texts_filepath)
         print('Adding text to each entry...')
         for idx, text in enumerate(tqdm(open(all_texts_filepath, 'r'), total=self.NUM_ENTRIES)):
+            text = text.strip()
             id = self.get_id_by_idx(idx)
             entry_dirpath = self.get_entry_dirpath(id)
             entry_text_filepath = entry_dirpath / 'text.txt'

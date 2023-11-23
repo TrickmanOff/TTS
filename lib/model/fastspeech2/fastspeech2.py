@@ -33,22 +33,28 @@ class FastSpeech2(BaseModel):
 
         self.head = nn.Linear(phonems_embed_dim, out_mel_freqs)
 
-    def forward(self, phonems_tokens: LongTensor, true_duration: Optional[LongTensor] = None,
+    def forward(self, phonemes_tokens: LongTensor, true_duration: Optional[LongTensor] = None,
                 **batch) -> Dict[str, Tensor]:
         """
-        phonems_tokens: (B, S)
-        """
-        phonems_embeds = self.phonems_embeds(phonems_tokens)  # (B, S, d=phonems_embed_dim)
-        phonems_embeds = self.pos_encoding_1(phonems_embeds)  # (B, S, d)
+        phonemes_tokens: (B, S)
 
-        encoded_phonems = self.encoder(phonems_embeds)  # (B, S, d)
+        output:
+            pred_log_duration: (B, S)
+            pred_pitch:        (B, S')
+            pred_energy:       (B, S')
+            pred_mel_spec:     (B, freqs, S')
+        """
+        phonemes_embeds = self.phonems_embeds(phonemes_tokens)  # (B, S, d=phonems_embed_dim)
+        phonemes_embeds = self.pos_encoding_1(phonemes_embeds)  # (B, S, d)
+
+        encoded_phonems = self.encoder(phonemes_embeds)  # (B, S, d)
 
         output = self.variance_adaptor(encoded_phonems, true_duration)
-        aligned_encoded_phonems = output['aligned_phonems_embeds']  # (B, S', d)
+        aligned_encoded_phonems = output.pop('aligned_phonemes_embeds')  # (B, S', d)
         aligned_encoded_phonems = self.pos_encoding_2(aligned_encoded_phonems)
 
         aligned_decoded_phonems = self.decoder(aligned_encoded_phonems)  # (B, S', d)
         pred_mel_specs = self.head(aligned_decoded_phonems)  # (B, S', mel_freqs)
-        output['pred_mel_specs'] = pred_mel_specs
+        output['pred_mel_spec'] = pred_mel_specs.transpose(1, 2)
 
         return output
