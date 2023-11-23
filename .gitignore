@@ -1,0 +1,10 @@
+.DS_Store
+.idea
+
+*__pycache__
+
+FastSpeech
+
+*.pdf
+.ipynb_checkpoints
+*.ipynb

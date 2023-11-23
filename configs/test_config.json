@@ -1,0 +1,27 @@
+{
+  "arch": {
+    "args": {
+      "phonems_cnt": 300,
+      "encoder_fft_layers": 4,
+      "decoder_fft_layers": 4,
+      "fft_config": {
+        "nhead": 2,
+        "dropout_p": 0.1,
+        "kernels_sizes": [9, 1],
+        "d_hidden": 1024
+      },
+      "variance_adaptor_config": {
+        "predictor_config": {
+          "dropout_p": 0.5,
+          "kernels_sizes": [3, 3],
+          "hidden_dim": 256,
+          "ff_dim": 256
+        },
+        "pitch_discretizer_scale": "log",
+        "pitch_discretizer_values": 256,
+        "energy_discretizer_scale": "linear",
+        "energy_discretizer_values": 256
+      }
+    }
+  }
+}
