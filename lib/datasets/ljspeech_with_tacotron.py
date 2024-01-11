@@ -36,8 +36,11 @@ class LJSpeechWithTacotronDataset(BaseDataset):
     """
     URL_LINKS = {
         'audio': 'https://data.keithito.com/data/speech/LJSpeech-1.1.tar.bz2',
-        'text': 'https://www.googleapis.com/drive/v3/files/1yDCbe3GpRXVjgUm3Kd_RUIh3AAKCNf_p?alt=media&key=AIzaSyBAigZjTwo8uh77umBBmOytKc_qjpTfRjI',
-        'mel': 'https://www.googleapis.com/drive/v3/files/1XLD0VKO9AEIiIYzUlQPweYUoPVdm2z28?alt=media&key=AIzaSyBAigZjTwo8uh77umBBmOytKc_qjpTfRjI',
+        # texts are here: https://disk.yandex.ru/d/-dxg-GixckcNrQ
+        # 'text': 'https://www.googleapis.com/drive/v3/files/1yDCbe3GpRXVjgUm3Kd_RUIh3AAKCNf_p?alt=media&key=AIzaSyBAigZjTwo8uh77umBBmOytKc_qjpTfRjI',
+        # entries are here: https://disk.yandex.ru/d/s8vqZeo3YLrigg
+        # mels are here: https://disk.yandex.ru/d/Q6VCD4-MleuzRg
+        # 'mel': 'https://www.googleapis.com/drive/v3/files/1XLD0VKO9AEIiIYzUlQPweYUoPVdm2z28?alt=media&key=AIzaSyBAigZjTwo8uh77umBBmOytKc_qjpTfRjI',
         'alignment': 'https://github.com/xcmyz/FastSpeech/raw/master/alignments.zip',
     }
 
